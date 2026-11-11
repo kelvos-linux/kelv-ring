@@ -11,6 +11,9 @@ pub const USER_IMAGE_CAPACITY: usize = 64 * 1024;
 pub const USER_RING_ADDRESS: u64 = USER_IMAGE_ADDRESS + 0x1_0000;
 pub const USER_STACK_TOP: u64 = USER_IMAGE_ADDRESS + 0x2_2000;
 pub const SPAWN_STACK_TOP: u64 = USER_IMAGE_ADDRESS + 0x2_6000;
+pub const USER_STACK_SIZE: usize = 4096 * 2;
+pub const MAX_SPAWNED_TASKS: u32 = RING_CAPACITY;
+pub const MAX_TASKS: usize = MAX_SPAWNED_TASKS as usize + 1;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -34,6 +37,8 @@ pub struct SharedRing {
     pub sq_tail: AtomicU32,
     pub cq_head: AtomicU32,
     pub cq_tail: AtomicU32,
+    /// Bit N is set after user task N reaches its entry point.
+    pub child_started: AtomicU32,
     submissions: UnsafeCell<[Submission; RING_CAPACITY as usize]>,
     completions: UnsafeCell<[Completion; RING_CAPACITY as usize]>,
 }
@@ -47,6 +52,7 @@ impl SharedRing {
             sq_tail: AtomicU32::new(0),
             cq_head: AtomicU32::new(0),
             cq_tail: AtomicU32::new(0),
+            child_started: AtomicU32::new(0),
             submissions: UnsafeCell::new(
                 [Submission {
                     opcode: 0,
