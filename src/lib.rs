@@ -69,12 +69,13 @@ impl Tid {
 pub const RING_CAPACITY: u32 = 8;
 pub const OP_SPAWN: u32 = 1;
 
-pub const USER_IMAGE_ADDRESS: u64 = 0x1_0000_0000;
-pub const USER_IMAGE_CAPACITY: usize = 64 * 1024;
-pub const USER_RING_ADDRESS: u64 = USER_IMAGE_ADDRESS + 0x1_0000;
-pub const USER_STACK_TOP: u64 = USER_IMAGE_ADDRESS + 0x2_2000;
-pub const SPAWN_STACK_TOP: u64 = USER_IMAGE_ADDRESS + 0x2_6000;
-pub const USER_STACK_SIZE: usize = 4096 * 2;
+pub mod layout;
+
+pub use layout::{
+    SPAWN_STACK_TOP, USER_IMAGE_ADDRESS, USER_IMAGE_CAPACITY, USER_RING_ADDRESS, USER_STACK_SIZE,
+    USER_STACK_TOP,
+};
+
 pub const MAX_SPAWNED_TASKS: u32 = RING_CAPACITY;
 pub const MAX_TASKS: usize = MAX_SPAWNED_TASKS as usize + 1;
 
