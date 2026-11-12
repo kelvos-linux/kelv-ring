@@ -3,6 +3,69 @@
 use core::cell::UnsafeCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
+// Scalar syscall numbers used by the current kernel and SDK.
+pub const SYS_SPAWN: u64 = 1;
+pub const SYS_EXIT: u64 = 2;
+
+pub const SYS_GET_PID: u64 = 3;
+pub const SYS_GET_TID: u64 = 4;
+
+pub const SYS_WAIT_CHILD: u64 = 5;
+pub const BOOT_CHILD_IMAGE: u64 = 1;
+pub const WAIT_NO_HANG: u64 = 1;
+pub const INVALID_USER_RETURN: u16 = 256;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExitStatus {
+    Exited(u32),
+    Faulted(u16),
+}
+
+impl ExitStatus {
+    pub const fn encode(self) -> u64 {
+        match self {
+            Self::Exited(code) => code as u64,
+            Self::Faulted(vector) => (1 << 32) | vector as u64,
+        }
+    }
+
+    pub fn decode(value: u64) -> Option<Self> {
+        match value >> 32 {
+            0 => Some(Self::Exited(value as u32)),
+            1 => u16::try_from(value as u32).ok().map(Self::Faulted),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Pid(core::num::NonZeroU32);
+
+impl Pid {
+    pub const INIT: Self = Self(core::num::NonZeroU32::MIN);
+
+    pub fn from_raw(raw: u32) -> Option<Self> {
+        core::num::NonZeroU32::new(raw).map(Self)
+    }
+
+    pub const fn get(self) -> u32 {
+        self.0.get()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Tid(core::num::NonZeroU32);
+
+impl Tid {
+    pub fn from_raw(raw: u32) -> Option<Self> {
+        core::num::NonZeroU32::new(raw).map(Self)
+    }
+
+    pub const fn get(self) -> u32 {
+        self.0.get()
+    }
+}
+
 pub const RING_CAPACITY: u32 = 8;
 pub const OP_SPAWN: u32 = 1;
 
